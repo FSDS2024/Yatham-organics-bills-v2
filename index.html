@@ -222,7 +222,7 @@ function updatePrice(el){
  const row=el.closest(".item-row");
  const p=products.find(x=>x.id===row.querySelector(".product").value);
  const pack=row.querySelector(".pack").value;
- const price=pack==="200"?p.p200:pack==="500"?p.p500:p.p1000;
+ const price=pack==="200"?p.p200:pack==="500"?p.p500:p.p1000.p.1piece;
 
  if(price===null){
    row.dataset.price="";
