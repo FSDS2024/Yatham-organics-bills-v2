@@ -277,35 +277,93 @@ function getData(){
 }
 
 function printBill(){
- const d=getData();
- if(!d.items.length){alert("Please add at least one valid product.");return}
- const date=d.date?new Date(d.date+"T00:00:00").toLocaleDateString("en-IN"):"";
- document.getElementById("printArea").innerHTML=`
-  <div class="print-head">
-   <div><h1>YATHAM ORGANICS</h1><div>Natural • Traditional • Quality Foods</div></div>
-   <div class="meta"><strong>Bill No:</strong> ${esc(d.billNo)}<br><strong>Date:</strong> ${esc(date)}</div>
-  </div>
-  <div class="customer">
-   <strong>Customer:</strong> ${esc(d.customerName)}
-   ${d.mobile?` &nbsp; | &nbsp; <strong>Mobile:</strong> ${esc(d.mobile)}`:""}
-   ${d.address?`<br><strong>Address:</strong> ${esc(d.address)}`:""}
-  </div>
-  <table>
-   <thead><tr><th>#</th><th>Product</th><th>Pack</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
-   <tbody>${d.items.map((i,n)=>`
-    <tr><td>${n+1}</td><td>${esc(i.name)}</td><td>${i.pack}</td><td>${i.qty}</td><td>${money(i.price)}</td><td>${money(i.amount)}</td></tr>
-   `).join("")}</tbody>
-  </table>
-  <div class="print-summary">
-   <div><span>Subtotal</span><strong>${money(d.subtotal)}</strong></div>
-   <div><span>Discount</span><strong>${money(d.discount)}</strong></div>
-   <div class="final"><span>Grand Total</span><strong>${money(d.total)}</strong></div>
-  </div>
-  <div class="thanks">Thank you for choosing Yatham Organics!<br>We appreciate your support.</div>
- `;
- window.print();
-}
+  const d = getData();
 
+  if(!d.items.length){
+    alert("Please add at least one valid product.");
+    return;
+  }
+
+  const date = d.date
+    ? new Date(d.date + "T00:00:00").toLocaleDateString("en-IN")
+    : "";
+
+  const billHTML = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>${esc(d.billNo)} - Yatham Organics</title>
+    <style>
+      *{box-sizing:border-box}
+      body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:20px;color:#111}
+      .print-head{display:flex;justify-content:space-between;border-bottom:2px solid #222;padding-bottom:12px}
+      .print-head h1{margin:0 0 5px;font-size:24px}
+      .meta{text-align:right;font-size:12px}
+      .customer{margin:15px 0;font-size:13px}
+      table{width:100%;border-collapse:collapse;font-size:12px}
+      th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}
+      th:nth-child(n+3),td:nth-child(n+3){text-align:right}
+      .print-summary{width:300px;margin-left:auto;margin-top:15px;font-size:13px}
+      .print-summary div{display:flex;justify-content:space-between;padding:5px}
+      .print-summary .final{border-top:2px solid #222;font-size:18px;font-weight:bold;padding-top:9px}
+      .thanks{text-align:center;margin-top:30px;font-size:13px}
+      @media print{body{padding:10mm}}
+    </style>
+  </head>
+  <body>
+    <div class="print-head">
+      <div>
+        <h1>YATHAM ORGANICS</h1>
+        <div>Natural • Traditional • Quality Foods</div>
+      </div>
+      <div class="meta">
+        <strong>Bill No:</strong> ${esc(d.billNo)}<br>
+        <strong>Date:</strong> ${esc(date)}
+      </div>
+    </div>
+    <div class="customer">
+      <strong>Customer:</strong> ${esc(d.customerName)}
+      ${d.mobile ? ` &nbsp; | &nbsp; <strong>Mobile:</strong> ${esc(d.mobile)}` : ""}
+      ${d.address ? `<br><strong>Address:</strong> ${esc(d.address)}` : ""}
+    </div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Product</th><th>Pack</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
+      </thead>
+      <tbody>
+        ${d.items.map((i,n)=>`
+          <tr>
+            <td>${n+1}</td><td>${esc(i.name)}</td><td>${i.pack}</td>
+            <td>${i.qty}</td><td>${money(i.price)}</td><td>${money(i.amount)}</td>
+          </tr>`).join("")}
+      </tbody>
+    </table>
+    <div class="print-summary">
+      <div><span>Subtotal</span><strong>${money(d.subtotal)}</strong></div>
+      <div><span>Discount</span><strong>${money(d.discount)}</strong></div>
+      <div class="final"><span>Grand Total</span><strong>${money(d.total)}</strong></div>
+    </div>
+    <div class="thanks">Thank you for choosing Yatham Organics!<br>We appreciate your support.</div>
+  </body>
+  </html>`;
+
+  const printWindow = window.open("", "_blank", "width=850,height=900");
+
+  if(!printWindow){
+    alert("Print window was blocked. Please allow pop-ups for this website and try again.");
+    return;
+  }
+
+  printWindow.document.open();
+  printWindow.document.write(billHTML);
+  printWindow.document.close();
+
+  setTimeout(function(){
+    printWindow.focus();
+    printWindow.print();
+  }, 500);
+}
 function shareWhatsApp(){
  const d=getData();
  if(!d.items.length){alert("Please add at least one valid product.");return}
