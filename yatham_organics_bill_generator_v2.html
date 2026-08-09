@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yatham Organics - Bill Generator</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f6f1;color:#1f2a1f}
+.container{max-width:1100px;margin:auto;padding:18px}
+.header{background:#214d2b;color:#fff;border-radius:16px;padding:22px;display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}
+.header h1{margin:0 0 5px;font-size:28px}.header p{margin:0;opacity:.9}
+.bill-box{background:rgba(255,255,255,.12);padding:12px 16px;border-radius:10px}
+.card{background:#fff;border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 3px 14px rgba(0,0,0,.07)}
+.card h2{margin:0 0 15px;color:#214d2b;font-size:18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.customer-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:13px;font-weight:bold;margin-bottom:6px}
+input,select{width:100%;padding:11px;border:1px solid #ccd5ca;border-radius:9px;background:#fff}
+.item-row{display:grid;grid-template-columns:2.3fr 110px 90px 110px 42px;gap:10px;align-items:end;margin-bottom:12px}
+.amount{font-weight:bold;text-align:right;padding:11px 0}
+.btn{border:0;border-radius:9px;padding:11px 15px;cursor:pointer;font-weight:bold}
+.primary{background:#214d2b;color:#fff}.secondary{background:#e7eee5;color:#214d2b}
+.danger{background:#f8dddd;color:#a11b1b;padding:10px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.summary{max-width:370px;margin-left:auto}
+.line{display:flex;justify-content:space-between;padding:7px 0}
+.total{border-top:2px solid #214d2b;padding-top:12px;margin-top:8px;font-size:21px;font-weight:bold}
+.notice{font-size:12px;color:#657065}
+.empty{padding:20px;text-align:center;color:#777}
+.footer{text-align:center;color:#6b746b;font-size:12px;padding:10px}
+
+@media(max-width:700px){
+ .container{padding:10px}.header{flex-direction:column;align-items:flex-start}
+ .bill-box{width:100%}.grid,.customer-grid{grid-template-columns:1fr}
+ .item-row{grid-template-columns:1fr 90px 70px 90px 40px}
+ .item-row .amount{display:none}
+}
+@media print{
+ body{background:#fff}.container{display:none}#printArea{display:block;padding:20px}
+ .print-head{display:flex;justify-content:space-between;border-bottom:2px solid #222;padding-bottom:12px}
+ .print-head h1{margin:0}.meta{text-align:right;font-size:12px}
+ .customer{margin:15px 0;font-size:13px}
+ table{width:100%;border-collapse:collapse;font-size:12px}
+ th,td{padding:7px;border-bottom:1px solid #ddd}
+ th:nth-child(n+3),td:nth-child(n+3){text-align:right}
+ .print-summary{width:300px;margin-left:auto;margin-top:15px;font-size:13px}
+ .print-summary div{display:flex;justify-content:space-between;padding:4px}
+ .print-summary .final{border-top:2px solid #222;font-size:18px;font-weight:bold;padding-top:8px}
+ .thanks{text-align:center;margin-top:30px;font-size:13px}
+}
+#printArea{display:none}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<header class="header">
+  <div>
+    <h1>YATHAM ORGANICS</h1>
+    <p>Natural • Traditional • Quality Foods</p>
+  </div>
+  <div class="bill-box">
+    <strong>Bill No.</strong><br>
+    <span id="billNumber"></span>
+  </div>
+</header>
+
+<div class="grid">
+  <section class="card">
+    <h2>Customer Details</h2>
+    <div class="customer-grid">
+      <div>
+        <label>Customer Name</label>
+        <input id="customerName" placeholder="Enter customer name">
+      </div>
+      <div>
+        <label>Mobile Number</label>
+        <input id="customerMobile" type="tel" placeholder="Enter mobile number">
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <label>Address / Community</label>
+      <input id="customerAddress" placeholder="Optional">
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Bill Details</h2>
+    <div class="customer-grid">
+      <div>
+        <label>Date</label>
+        <input id="billDate" type="date">
+      </div>
+      <div>
+        <label>Discount (₹)</label>
+        <input id="discount" type="number" min="0" step="0.01" value="0" oninput="calculateBill()">
+      </div>
+    </div>
+    <p class="notice">Prices are based on the final Yatham Organics selling-price list supplied by you.</p>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Products</h2>
+  <div id="items"></div>
+  <button class="btn secondary" onclick="addItem()">＋ Add Product</button>
+</section>
+
+<section class="card">
+  <div class="summary">
+    <div class="line"><span>Subtotal</span><strong id="subtotal">₹0.00</strong></div>
+    <div class="line"><span>Discount</span><strong id="discountDisplay">₹0.00</strong></div>
+    <div class="line total"><span>Grand Total</span><span id="grandTotal">₹0.00</span></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="actions">
+    <button class="btn primary" onclick="printBill()">🖨️ Print / Save PDF</button>
+    <button class="btn secondary" onclick="shareWhatsApp()">📱 WhatsApp Bill</button>
+    <button class="btn secondary" onclick="newBill()">＋ New Bill</button>
+  </div>
+</section>
+
+<div class="footer">Yatham Organics • Thank you for your purchase</div>
+</div>
+
+<div id="printArea"></div>
+
+<script>
+/* =========================================================
+   YATHAM ORGANICS - FINAL SELLING PRICE MASTER
+   ========================================================= */
+
+const products = [
+ {id:"p01",name:"కంది పప్పు (Unpolished Toor Dal)",p200:41.80,p500:93.10,p1000:178.60},
+ {id:"p02",name:"పెసరపప్పు (Dehulled Moong Dal)",p200:41.80,p500:93.10,p1000:178.60},
+ {id:"p03",name:"పెసర పప్పు (Whole Green Gram)",p200:38.00,p500:83.60,p1000:159.60},
+ {id:"p04",name:"మినపపప్పు (Whole Urad Dal)",p200:38.00,p500:83.60,p1000:159.60},
+ {id:"p05",name:"మినపపప్పు (Dehulled Urad Dal)",p200:41.80,p500:93.10,p1000:178.60},
+ {id:"p06",name:"మినుములు (Graded Urad)",p200:34.20,p500:74.10,p1000:140.60},
+ {id:"p07",name:"రాగిపిండి (Ragi Flour)",p200:24.70,p500:50.35,p1000:93.10},
+ {id:"p08",name:"కొర్రలు రవ్వ (Foxtail Millet Rava)",p200:45.60,p500:102.60,p1000:197.60},
+ {id:"p09",name:"సామలు రవ్వ (Little Millet Rava)",p200:49.40,p500:112.10,p1000:216.60},
+ {id:"p10",name:"ఆరికలు రవ్వ (Kodo Millet Rava)",p200:49.40,p500:112.10,p1000:216.60},
+ {id:"p11",name:"రాజ్మా (Rajma)",p200:41.80,p500:93.10,p1000:178.60},
+ {id:"p12",name:"మైసూరు మల్లిక",p200:34.20,p500:74.10,p1000:140.60},
+ {id:"p13",name:"చిట్టి ముత్యాలు",p200:38.00,p500:83.60,p1000:159.60},
+ {id:"p14",name:"సాంబ",p200:22.80,p500:45.60,p1000:83.60},
+ {id:"p15",name:"పెసలు (Graded Moong)",p200:36.10,p500:78.85,p1000:150.10},
+ {id:"p16",name:"Red Rice",p200:36.10,p500:78.85,p1000:150.10},
+ {id:"p17",name:"Sabja",p200:83.60,p500:197.60,p1000:387.60},
+ {id:"p18",name:"Chia Seeds",p200:102.60,p500:245.10,p1000:482.60},
+ {id:"p19",name:"Pumpkin Seeds",p200:159.60,p500:387.60,p1000:767.60},
+ {id:"p20",name:"Groundnut",p200:null,p500:292.60,p1000:577.60},
+ {id:"p21",name:"Sesame",p200:null,p500:316.35,p1000:625.10},
+ {id:"p22",name:"Honey Type 1 (Putta)",p200:197.60,p500:482.60,p1000:957.60},
+ {id:"p23",name:"Honey Type 2 (Pattu)",p200:159.60,p500:387.60,p1000:767.60}
+];
+
+let billCounter = Number(localStorage.getItem("yathamBillCounter") || "0");
+
+function money(v){return "₹"+Number(v||0).toFixed(2)}
+function esc(v){
+ return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+ .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+function newBillNumber(){
+ billCounter++;
+ localStorage.setItem("yathamBillCounter",billCounter);
+ const d=new Date();
+ const date=String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+ return "YO-"+date+"-"+String(billCounter).padStart(4,"0");
+}
+
+function today(){
+ const d=new Date();
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function productOptions(){
+ return products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+}
+
+function addItem(){
+ const div=document.createElement("div");
+ div.className="item-row";
+ div.innerHTML=`
+  <div>
+    <label>Product</label>
+    <select class="product" onchange="updatePrice(this)">${productOptions()}</select>
+  </div>
+  <div>
+    <label>Pack</label>
+    <select class="pack" onchange="updatePrice(this)">
+      <option value="200">200 g</option>
+      <option value="500" selected>500 g</option>
+      <option value="1000">1 kg</option>
+    </select>
+  </div>
+  <div>
+    <label>Qty</label>
+    <input class="qty" type="number" min="1" value="1" oninput="calculateBill()">
+  </div>
+  <div class="amount">₹0.00</div>
+  <button class="btn danger" onclick="removeItem(this)">✕</button>
+ `;
+ document.getElementById("items").appendChild(div);
+ updatePrice(div.querySelector(".product"));
+}
+
+function removeItem(btn){
+ btn.closest(".item-row").remove();
+ calculateBill();
+}
+
+function updatePrice(el){
+ const row=el.closest(".item-row");
+ const p=products.find(x=>x.id===row.querySelector(".product").value);
+ const pack=row.querySelector(".pack").value;
+ const price=pack==="200"?p.p200:pack==="500"?p.p500:p.p1000;
+
+ if(price===null){
+   row.dataset.price="";
+   row.querySelector(".amount").textContent="Not Available";
+   alert(`${p.name} is not available in the 200 g pack.`);
+ }else{
+   row.dataset.price=price;
+ }
+ calculateBill();
+}
+
+function calculateBill(){
+ let subtotal=0;
+ document.querySelectorAll(".item-row").forEach(row=>{
+   const price=Number(row.dataset.price||0);
+   const qty=Number(row.querySelector(".qty").value||0);
+   const amount=price*qty;
+   subtotal+=amount;
+   row.querySelector(".amount").textContent=price?money(amount):"Not Available";
+ });
+ let discount=Math.max(0,Number(document.getElementById("discount").value||0));
+ discount=Math.min(discount,subtotal);
+ document.getElementById("subtotal").textContent=money(subtotal);
+ document.getElementById("discountDisplay").textContent=money(discount);
+ document.getElementById("grandTotal").textContent=money(subtotal-discount);
+}
+
+function getData(){
+ const items=[];
+ document.querySelectorAll(".item-row").forEach(row=>{
+   const p=products.find(x=>x.id===row.querySelector(".product").value);
+   const pack=row.querySelector(".pack").value;
+   const price=Number(row.dataset.price||0);
+   const qty=Number(row.querySelector(".qty").value||0);
+   if(p && price>0 && qty>0){
+     items.push({
+       name:p.name,
+       pack:pack==="200"?"200 g":pack==="500"?"500 g":"1 kg",
+       qty,price,amount:price*qty
+     });
+   }
+ });
+ const subtotal=items.reduce((s,i)=>s+i.amount,0);
+ const discount=Math.min(Math.max(Number(document.getElementById("discount").value||0),0),subtotal);
+ return {
+   billNo:document.getElementById("billNumber").textContent,
+   date:document.getElementById("billDate").value,
+   customerName:document.getElementById("customerName").value.trim()||"Walk-in Customer",
+   mobile:document.getElementById("customerMobile").value.trim(),
+   address:document.getElementById("customerAddress").value.trim(),
+   items,subtotal,discount,total:subtotal-discount
+ };
+}
+
+function printBill(){
+ const d=getData();
+ if(!d.items.length){alert("Please add at least one valid product.");return}
+ const date=d.date?new Date(d.date+"T00:00:00").toLocaleDateString("en-IN"):"";
+ document.getElementById("printArea").innerHTML=`
+  <div class="print-head">
+   <div><h1>YATHAM ORGANICS</h1><div>Natural • Traditional • Quality Foods</div></div>
+   <div class="meta"><strong>Bill No:</strong> ${esc(d.billNo)}<br><strong>Date:</strong> ${esc(date)}</div>
+  </div>
+  <div class="customer">
+   <strong>Customer:</strong> ${esc(d.customerName)}
+   ${d.mobile?` &nbsp; | &nbsp; <strong>Mobile:</strong> ${esc(d.mobile)}`:""}
+   ${d.address?`<br><strong>Address:</strong> ${esc(d.address)}`:""}
+  </div>
+  <table>
+   <thead><tr><th>#</th><th>Product</th><th>Pack</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+   <tbody>${d.items.map((i,n)=>`
+    <tr><td>${n+1}</td><td>${esc(i.name)}</td><td>${i.pack}</td><td>${i.qty}</td><td>${money(i.price)}</td><td>${money(i.amount)}</td></tr>
+   `).join("")}</tbody>
+  </table>
+  <div class="print-summary">
+   <div><span>Subtotal</span><strong>${money(d.subtotal)}</strong></div>
+   <div><span>Discount</span><strong>${money(d.discount)}</strong></div>
+   <div class="final"><span>Grand Total</span><strong>${money(d.total)}</strong></div>
+  </div>
+  <div class="thanks">Thank you for choosing Yatham Organics!<br>We appreciate your support.</div>
+ `;
+ window.print();
+}
+
+function shareWhatsApp(){
+ const d=getData();
+ if(!d.items.length){alert("Please add at least one valid product.");return}
+ let msg=`*YATHAM ORGANICS*%0ABill No: ${d.billNo}%0ACustomer: ${encodeURIComponent(d.customerName)}%0A%0A*Items:*%0A`;
+ d.items.forEach((i,n)=>msg+=`${n+1}. ${encodeURIComponent(i.name)} - ${i.pack} x ${i.qty} = ${money(i.amount)}%0A`);
+ msg+=`%0ASubtotal: ${money(d.subtotal)}%0ADiscount: ${money(d.discount)}%0A*Grand Total: ${money(d.total)}*%0A%0AThank you for choosing Yatham Organics!`;
+ const mobile=d.mobile.replace(/\D/g,"");
+ const url=mobile?`https://wa.me/${mobile}?text=${msg}`:`https://wa.me/?text=${msg}`;
+ window.open(url,"_blank");
+}
+
+function newBill(){
+ if(!confirm("Start a new bill?"))return;
+ document.getElementById("customerName").value="";
+ document.getElementById("customerMobile").value="";
+ document.getElementById("customerAddress").value="";
+ document.getElementById("discount").value="0";
+ document.getElementById("items").innerHTML="";
+ document.getElementById("billNumber").textContent=newBillNumber();
+ document.getElementById("billDate").value=today();
+ addItem();calculateBill();
+}
+
+document.getElementById("billNumber").textContent=newBillNumber();
+document.getElementById("billDate").value=today();
+addItem();
+calculateBill();
+</script>
+</body>
+</html>
