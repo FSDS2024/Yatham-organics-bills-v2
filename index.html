@@ -158,7 +158,7 @@ const products = [
  {id:"p21",name:"Sesame",p200:null,p500:316.35,p1000:625.10},
  {id:"p22",name:"Honey Type 1 (Putta)",p200:197.60,p500:482.60,p1000:957.60},
  {id:"p23",name:"Honey Type 2 (Pattu)",p200:159.60,p500:387.60,p1000:767.60},
- {id:"p24",name:"banana (Pattu)",B1:10,B2:20,B3:30}
+ {id:"p24",name:"banana (Pattu)",p.1:10}
 ];
 
 let billCounter = Number(localStorage.getItem("yathamBillCounter") || "0");
@@ -222,7 +222,7 @@ function updatePrice(el){
  const row=el.closest(".item-row");
  const p=products.find(x=>x.id===row.querySelector(".product").value);
  const pack=row.querySelector(".pack").value;
- const price=pack==="200"?p.p200:pack==="500"?p.p500:p.p1000.p.1piece;
+ const price=pack==="200"?p.p200:pack==="500"?p.p500:p.p1000.p.1;
 
  if(price===null){
    row.dataset.price="";
